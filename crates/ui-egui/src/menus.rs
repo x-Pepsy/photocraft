@@ -57,6 +57,7 @@ pub const UI_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("help.website", "PhotoCraft Website", &["Help"], None),
     ("help.artcraftWebsite", "ArtCraft Website", &["Help"], None),
     ("help.github", "PhotoCraft on GitHub", &["Help"], None),
+    ("help.checkForUpdates", "Check for Updates…", &["Help"], None),
     ("help.reportIssue", "Report an Issue…", &["Help"], None),
     ("help.systemInfo", "System Info…", &["Help"], None),
     ("help.about", "About PhotoCraft", &["Help"], None),
@@ -114,6 +115,18 @@ pub fn invoke(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: Va
 
 /// [`invoke`] without the unsaved-changes prompt, for once the user has already answered it.
 pub(crate) fn invoke_unguarded(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: Value) -> Result<Value, String> {
+    if id == "help.checkForUpdates" {
+        let result = match app.services.install_update.as_mut() {
+            Some(installer) => installer().map(|message| json!({"status": message})),
+            None => Ok(crate::links::open(app, ctx, crate::links::RELEASES)),
+        };
+        if let Err(error) = &result {
+            app.ui.status = format!("Update failed: {error}");
+        } else if let Ok(value) = &result {
+            app.ui.status = value["status"].as_str().unwrap_or("Update started").to_string();
+        }
+        return result;
+    }
     // Help › Discord, website, GitHub, Report an Issue.
     if let Some(url) = crate::links::url_for(id) {
         return Ok(crate::links::open(app, ctx, url));

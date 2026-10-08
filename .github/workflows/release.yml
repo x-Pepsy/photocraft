@@ -102,6 +102,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
           CRAFT_FONTS_REQUIRED: "1"
+          PHOTOCRAFT_UPDATE_PUBLIC_KEY: ${{ secrets.PHOTOCRAFT_UPDATE_PUBLIC_KEY }}
         run: packaging/macos/package.sh --arch universal
       # Unpacks the CLI zip and checks the binary users get: Developer ID, hardened runtime,
       # timestamp, and Gatekeeper's notarization lookup (codesign --verify, spctl). Also the DMG's
@@ -173,6 +174,7 @@ jobs:
           AZURE_CERT_PROFILE: ${{ secrets.AZURE_CERT_PROFILE }}
           CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
           CRAFT_FONTS_REQUIRED: "1"
+          PHOTOCRAFT_UPDATE_PUBLIC_KEY: ${{ secrets.PHOTOCRAFT_UPDATE_PUBLIC_KEY }}
         run: ./packaging/windows/package.ps1 -Arch ${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
@@ -225,6 +227,7 @@ jobs:
         env:
           CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
           CRAFT_FONTS_REQUIRED: "1"
+          PHOTOCRAFT_UPDATE_PUBLIC_KEY: ${{ secrets.PHOTOCRAFT_UPDATE_PUBLIC_KEY }}
         run: packaging/linux/package.sh
       - name: Check the packages
         run: |
@@ -382,6 +385,7 @@ jobs:
       PRERELEASE: ${{ needs.version.outputs.prerelease }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
+      PHOTOCRAFT_UPDATE_PUBLIC_KEY: ${{ secrets.PHOTOCRAFT_UPDATE_PUBLIC_KEY }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -392,6 +396,22 @@ jobs:
         working-directory: artifacts
         run: |
           sha256sum -- * | tee SHA256SUMS.txt
+      - name: Generate signed update manifest
+        working-directory: artifacts
+        env:
+          PHOTOCRAFT_VERSION: ${{ env.VERSION }}
+          PHOTOCRAFT_UPDATE_SIGNING_KEY: ${{ secrets.PHOTOCRAFT_UPDATE_SIGNING_KEY }}
+        run: |
+          if [ -z "$PHOTOCRAFT_UPDATE_SIGNING_KEY" ]; then
+            echo "::error::PHOTOCRAFT_UPDATE_SIGNING_KEY is required for OTA metadata"
+            exit 1
+          fi
+          python3 "$GITHUB_WORKSPACE/packaging/update-manifest.py"
+          cargo run --locked --release --manifest-path "$GITHUB_WORKSPACE/Cargo.toml" -p photocraft-update --bin sign_manifest -- \
+            update-manifest.json update-manifest.json.sig update-manifest.public
+          test -s update-manifest.json.sig
+          test -s update-manifest.public
+          echo "Update manifest public key: $(cat update-manifest.public)" >> "$GITHUB_STEP_SUMMARY"
       - name: Create or update the draft release
         working-directory: artifacts
         run: |

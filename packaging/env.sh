@@ -38,6 +38,7 @@ fi
 export PHOTOCRAFT_BUILD_SHA
 export PHOTOCRAFT_BUILD_DATE="${PHOTOCRAFT_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
+export RUSTFLAGS="${RUSTFLAGS:-}"
 
 # Emit a GitHub Actions warning (plain stderr outside Actions).
 warn() {

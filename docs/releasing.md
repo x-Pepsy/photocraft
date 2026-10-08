@@ -61,6 +61,11 @@ Every binary reports its version, the commit and the build date: `photocraft --v
 `PHOTOCRAFT_BUILD_DATE`, and `crates/engine/src/build_info.rs` reads them at compile time. A plain
 `cargo build` doesn't set them and reports `0.2.0 (dev build)`.
 
+OTA releases publish signed `update-manifest.json` metadata and require the
+`PHOTOCRAFT_UPDATE_SIGNING_KEY` Actions secret. The secret is a 32-byte Ed25519 seed in hex; the
+job summary prints the public key for desktop builds. The Help menu links to the fork release page
+until platform-specific installation helpers are enabled.
+
 Every desktop build job (macOS, Windows, Linux, FreeBSD) also checks out [craft-fonts](https://github.com/storytold/craft-fonts)
 at the commit in `CRAFT_FONTS_REF` (top of `release.yml`) and builds with `CRAFT_FONTS_DIR` and
 `CRAFT_FONTS_REQUIRED=1`, so desktop releases embed its Japanese fonts (the web build embeds none: see

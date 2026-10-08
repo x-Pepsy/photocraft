@@ -1,0 +1,21 @@
+[package]
+name = "photocraft-update"
+description = "Signed PhotoCraft release manifests and update selection"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+ed25519-dalek = { version = "2.1", default-features = false, features = ["alloc", "std"] }
+hex = "0.4"
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"
+
+[dev-dependencies]
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand = "0.8"
